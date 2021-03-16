@@ -5,6 +5,7 @@ import (
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
+	"os"
 	"strconv"
 )
 
@@ -29,13 +30,13 @@ func newHttpResolve(c *caddy.Controller) (*HttpResolve, error) {
 		for c.NextBlock() {
 			switch c.Val() {
 			case "endpoint":
-				httpResolve.Endpoint = c.RemainingArgs()[0]
+				httpResolve.Endpoint = os.Getenv(c.RemainingArgs()[0])
 			case "secretId":
-				httpResolve.SecretId = c.RemainingArgs()[0]
+				httpResolve.SecretId = os.Getenv(c.RemainingArgs()[0])
 			case "secretKey":
-				httpResolve.SecretKey = c.RemainingArgs()[0]
+				httpResolve.SecretKey = os.Getenv(c.RemainingArgs()[0])
 			case "ttl":
-				ttlString := c.RemainingArgs()[0]
+				ttlString := os.Getenv(c.RemainingArgs()[0])
 				ttl64, _ := strconv.ParseFloat(ttlString, 64)
 				httpResolve.Ttl = uint32(ttl64)
 			}
