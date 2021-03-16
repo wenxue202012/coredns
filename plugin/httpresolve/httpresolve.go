@@ -46,13 +46,11 @@ func (h *HttpResolve) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 	ipAddress, err := DescribeInstanceAll(h.Endpoint, h.SecretId, h.SecretKey, []string{instanceName})
 
 	if err != nil || len(ipAddress) == 0 {
-		//fmt.Println(state.QName())
-		//ip,err := net.ResolveIPAddr("ip",state.QName())
-		//if err != nil {
-		//	return plugin.NextOrFailure(h.Name(), h.Next, ctx, w, r)
-		//}
-		//ipAddress = ip.String()
-		return plugin.NextOrFailure(h.Name(), h.Next, ctx, w, r)
+		ip, err := net.ResolveIPAddr("ip", state.QName())
+		if err != nil {
+			return plugin.NextOrFailure(h.Name(), h.Next, ctx, w, r)
+		}
+		ipAddress = ip.String()
 	}
 
 	rec := new(dns.A)
@@ -82,11 +80,11 @@ func DescribeInstanceAll(endpoint string, secretId string, secretKey string, reg
 	cpf.HttpProfile.Endpoint = endpoint
 
 	client, _ := tcr.NewClient(credential, regions.Chengdu, cpf)
-	request := tcr.NewDescribeInstancesRequest()
+	req := tcr.NewDescribeInstancesRequest()
 	allRegion := true
-	request.AllRegion = &allRegion
-	request.WithApiInfo("tcr", "2019-09-24", "DescribeInstanceAll")
-	request.Filters = []*tcr.Filter{
+	req.AllRegion = &allRegion
+	req.WithApiInfo("tcr", "2019-09-24", "DescribeInstanceAll")
+	req.Filters = []*tcr.Filter{
 		&tcr.Filter{
 			Name:   common.StringPtr("RegistryName"),
 			Values: common.StringPtrs(registerNames),
@@ -94,7 +92,7 @@ func DescribeInstanceAll(endpoint string, secretId string, secretKey string, reg
 	}
 
 	response := tcr.DescribeInstancesResponse{}
-	err := client.Send(request, &response)
+	err := client.Send(req, &response)
 	if err != nil {
 		log.Error("Failed to call tcr to resolve internal address . instanceName ={}, err={} ", registerNames, err)
 		return "", err
@@ -102,7 +100,7 @@ func DescribeInstanceAll(endpoint string, secretId string, secretKey string, reg
 	}
 	if len(response.Response.Registries) <= 0 {
 		log.Error("Call tcr to resolve the internal address is empty . instanceName = ", registerNames)
-		return "", errors.New("Internal address is empty")
+		return "", errors.New("Internal address is empty.")
 	}
 	ipAddressArray := make([]string, 0)
 	for _, value := range response.Response.Registries {
